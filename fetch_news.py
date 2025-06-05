@@ -1,7 +1,7 @@
 import requests
 from datetime import datetime
 
-API_KEY = "YOUR_NEWSAPI_KEY"  # Replace with your actual NewsAPI key
+API_KEY = "99902109370b406f956f5617ec1fc138" # Replace with your actual NewsAPI key
 URL = f"https://newsapi.org/v2/top-headlines?country=in&category=general&pageSize=10&apiKey={API_KEY}"
 
 def fetch_top_news():

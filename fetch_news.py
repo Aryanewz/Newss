@@ -1,55 +1,60 @@
 import requests
 from datetime import datetime
 
-# News API URL and key (replace YOUR_API_KEY with your actual key)
-API_KEY = '99902109370b406f956f5617ec1fc138'
-NEWS_API_URL = (
-    f'https://newsapi.org/v2/top-headlines?country=in&pageSize=10&apiKey={API_KEY}'
-)
+API_KEY = "YOUR_NEWSAPI_KEY"  # Replace with your actual NewsAPI key
+URL = f"https://newsapi.org/v2/top-headlines?country=in&category=general&pageSize=10&apiKey={API_KEY}"
 
 def fetch_top_news():
     try:
-        response = requests.get(NEWS_API_URL)
-        response.raise_for_status()
+        response = requests.get(URL)
         data = response.json()
-        articles = data.get('articles', [])
-        news_list = [
-            {
-                'title': article['title'],
-                'url': article['url']
-            }
-            for article in articles
-        ]
+
+        if data["status"] != "ok":
+            print("❌ Failed to fetch news. Status:", data["status"])
+            return []
+
+        articles = data.get("articles", [])
+        news_list = []
+
+        for article in articles:
+            title = article.get("title", "No Title")
+            url = article.get("url", "#")
+            news_list.append({"title": title, "url": url})
+
+        print(f"✅ Total articles fetched: {len(news_list)}")
         return news_list
+
     except Exception as e:
-        print(f"Error fetching news: {e}")
+        print("❌ Error while fetching news:", str(e))
         return []
 
 def update_html(news_list):
-    # Read the template.html
-    with open('template.html', 'r', encoding='utf-8') as file:
-        html = file.read()
+    try:
+        with open("index.html", "r", encoding="utf-8") as f:
+            html = f.read()
 
-    # Prepare news items as list elements with links
-    news_items = "\n".join(
-        f'<li><a href="{article["url"]}" target="_blank" rel="noopener noreferrer">{article["title"]}</a></li>'
-        for article in news_list
-    )
+        today = datetime.now().strftime("%B %d, %Y")
 
-    # Replace placeholder with news items
-    html = html.replace('<!-- NEWS_PLACEHOLDER -->', news_items)
+        # Create the updated news list HTML
+        news_items_html = "\n".join(
+            f'<li><a href="{article["url"]}" target="_blank" rel="noopener">{article["title"]}</a></li>'
+            for article in news_list
+        )
 
-    # Replace the date placeholder ({{date}}) with today's date in desired format
-    today_str = datetime.now().strftime('%B %d, %Y')
-    html = html.replace('{{date}}', today_str)
+        # Replace content inside <ul>...</ul> and date
+        import re
+        html = re.sub(r"<p class=\"date\">.*?</p>", f"<p class=\"date\">{today}</p>", html)
+        html = re.sub(r"<ul>.*?</ul>", f"<ul>\n{news_items_html}\n</ul>", html, flags=re.DOTALL)
 
-    # Write the updated HTML to index.html
-    with open('index.html', 'w', encoding='utf-8') as file:
-        file.write(html)
+        with open("index.html", "w", encoding="utf-8") as f:
+            f.write(html)
 
-    print(f"✅ Total articles fetched: {len(news_list)}")
-    print("✅ index.html updated with top news.")
+        print("✅ index.html updated with top news.")
+
+    except Exception as e:
+        print("❌ Error while updating HTML:", str(e))
 
 if __name__ == "__main__":
     news = fetch_top_news()
-    update_html(news)
+    if news:
+        update_html(news)
